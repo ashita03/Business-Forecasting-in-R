@@ -1,0 +1,326 @@
+---
+title: "Business Forecasting - Assignment 01"
+author: "Ashita Shetty"
+date: "2023-10-23"
+output:
+  html_document: default
+  pdf_document: default
+---
+  
+
+```{r}
+library(datasets)
+library(fpp2)
+```
+
+
+## Exercise 1
+
+#### WWWusage
+
+##### (i) Plot the time series along with a forecast for next 20 minutes using the naive method
+
+```{r}
+n_www <- naive(WWWusage, h = 20)
+plot(n_www, main = "Internet usage time series and forecast", ylab = "No. of users", xlab="Minutes")
+```
+
+##### (ii) Plot a correlogram of residuals
+
+```{r}
+Acf(n_www$residuals, main = "Correlogram of Residuals")
+```
+
+##### (iii) Perform a Ljung-Box test with lag 8 on residuals
+
+```{r}
+ljung <- Box.test(n_www$residuals, type = "Ljung-Box", lag = 8)
+print(ljung)
+```
+```{r}
+accuracy(n_www)
+```
+
+##### (iv) Use parts (ii) and (iii) to comment on whether there is autocorrelation or seasonality
+
+* In the Acf plot, it is visible that the lines cross the confidence interval levels and it crosses on both sides of the Acf plot.This suggests that there is seasonality in the data.
+* In the Ljung box test, the p < 0.05 suggests that the autocorrelations in the residuals are statistically significant and therefore, the hypothesis that there is autocorrelation in the residuals can be rejected.  
+
+
+
+## Exercise 2
+
+#### woolyrnq
+
+##### (i) Plot the time series along with a forecast for the next 3 years using the seasonal naıve method
+
+```{r}
+snaive_woolyrnq <- snaive(woolyrnq, h = 12)
+plot(snaive_woolyrnq, main = "Quaterly woollen production in AUS - Time Series & Forecast", ylab = "Production quantity (tonnes)", xlab="Year")
+
+```
+
+##### (ii) Plot a correlogram of the residuals
+
+```{r}
+Acf(snaive_woolyrnq$residuals, main = "Correlogram of Residuals")
+
+```
+
+##### (iii) Perform a Ljung-Box test with lag 8 on the residuals
+
+```{r}
+ljung <- Box.test(snaive_woolyrnq$residuals, type = "Ljung-Box", lag = 8)
+print(ljung)
+```
+
+
+##### (iv) Use parts (ii) and (iii) to comment on whether there is autocorrelation or seasonality
+
+* In the Acf plot, it is visible that the lines cross the confidence interval levels and it crosses on both sides of the Acf plot.This suggests that there is seasonality in the data.
+* In the Ljung box test, the p < 0.05 suggests that the autocorrelations in the residuals are statistically significant and therefore, the hypothesis that there is no autocorrelation in the residuals can be rejected.  
+
+
+
+## Exercise 3
+
+#### ibmclose
+
+##### (i) Plot the time series along with a forecast for the next 30 days using the mean method.
+
+```{r}
+mean_ibmclose <- meanf(ibmclose, h = 30)
+plot(mean_ibmclose, main = "IBM stock price time series and forecast", ylab = "Stock Price", xlab="Days")
+
+```
+
+##### (ii) Plot a correlogram of the residuals.
+
+```{r}
+Acf(mean_ibmclose$residuals, main = "Correlogram of Residuals")
+
+```
+
+##### (iii) Perform a Ljung-Box test with lag 8 on the residuals.
+
+```{r}
+ljung <- Box.test(mean_ibmclose$residuals, type = "Ljung-Box", lag = 8)
+print(ljung)
+```
+
+##### (iv) Use parts (ii) and (iii) to comment on whether there is autocorrelation or seasonality
+
+* Based on the ACF plot, it can be inferred that the data follows a particular trend and since, it crosses the confidence level - there is autocorrelation.
+* In the Ljung box test, the p < 0.05 suggests that the autocorrelations in the residuals are statistically significant and therefore, the hypothesis that there is no autocorrelation in the residuals can be rejected.
+
+##### (v) What might be a more appropriate method of forecast for this time series?
+
+* *Naive or Seasonal Naive* would be a more appropriate method of forecast for this time series.
+* In the code provided below, it can be observed that the MAPE for Mean and Seasonal Naive/Naive have a significant difference, making the latter a better choice of forecasting method.
+* The MAPE and other error metric values are the same for Naive and Seasonal Naive because the data provided is for each day and therefore, the 'Season' here is the 'Day'.
+
+##### (vi) Implement your chosen method from part (v) and investigate whether it is indeed a better choice than the mean method
+
+```{r}
+n_ibmclose = naive(ibmclose, h=30)
+sn_ibmclose = snaive(ibmclose, h=30)
+```
+
+```{r}
+Acf(n_ibmclose$residuals, main = "Correlogram of Residuals - Naive Method")
+
+```
+
+```{r}
+Acf(sn_ibmclose$residuals, main = "Correlogram of Residuals - Seasonal Naive Method")
+
+```
+
+```{r}
+print("Mean Method")
+accuracy(mean_ibmclose)
+
+print("Naive Method")
+accuracy(n_ibmclose)
+
+print("Seasonal Naive Method")
+accuracy(sn_ibmclose)
+```
+## Exercise 4
+
+#### sunspotarea
+
+##### Consider the time series sunspotarea, which shows the annual average sunspot area between 1875 and 2015. Investigate whether the seasonal naıve method is a good way to forecast this series.
+
+```{r}
+sn_sunspotarea = snaive(sunspotarea, h=10)
+plot(sn_sunspotarea, main = "Seasonal Naive Method for Sun Spot Area", ylab = "Annual average sunspot area", xlab = "Year")
+
+```
+
+```{r}
+Acf(sn_sunspotarea$residuals, main = "Correlogram of Residuals - Seasonal Naive Method")
+```
+
+```{r}
+accuracy(sn_sunspotarea)
+```
+
+```{r}
+ljung <- Box.test(sn_sunspotarea$residuals, type = "Ljung-Box", lag = 8)
+print(ljung)
+```
+
+##### Inference:
+
+* Based on the accuracy (MAPE), it can derived that Seasonal Naive Method is not the appropriate method to go with.
+* The L-Jung Box test highlights that the hypothesis of not having any autocorrelations between the residuals can be rejected.
+* On the basis of ACF, it can be inferred that there is seasonality.
+
+
+
+## Exercise 5
+
+#### mcopper
+
+##### (i) Plot the time series.
+
+```{r}
+plot(mcopper, main = "Time Series for Monthly Copper Prices", ylab= "Copper prices", xlab = "Year")
+```
+
+
+
+##### (ii) Perform an appropriate Box Cox transformation.
+
+```{r}
+lambda <- BoxCox.lambda(mcopper)
+bc_mcopper <- BoxCox(mcopper, lambda)
+plot(bc_mcopper)
+```
+
+
+
+##### (iii) Plot the transformed data along with a five year forecast using the drift method.
+
+```{r}
+d_mcopper = rwf(bc_mcopper,h=60, drift=TRUE)
+plot(d_mcopper, main = "Five year forecast for the copper prices - Drift Method", ylab = "Copper Prices", xlab = "Year")
+```
+
+##### (iv) Plot a correlogram of the residuals.
+```{r}
+Acf(d_mcopper$residuals, main = "Correlogram of Residuals - Drift Method")
+```
+
+
+##### (v) Perform a Ljung-Box test with lag 8 on the residuals.
+
+```{r}
+ljung <- Box.test(d_mcopper$residuals, type = "Ljung-Box", lag = 8)
+print(ljung)
+```
+
+##### (vi) Use parts (iv) and (v) to comment on whether there is autocorrelation or seasonality.
+
+* Deriving from (iv), it can be observed that there is *seasonality* in the data.
+* On the basis of (v), it can be inferred that since the *p-value <0.05* there is autocorrelation between residuals.
+
+## Exercise 6
+
+#### huron
+
+##### (i) Use the window function to split the time series into a training set consisting of the data from 1875 to 1955 and the test set consisting of the data from 1956 to 1972.
+
+```{r}
+train_huron = window(huron, start=1875, end=1955)
+test_huron = window(huron, start = 1956, end = 1972)
+```
+
+##### (ii) Check you have correctly split up the data by producing two separate plots
+
+```{r}
+plot(train_huron, main = "Training set check")
+```
+
+```{r}
+plot(test_huron, main = "Test set check")
+```
+
+##### (iii) Explain why the seasonal naıve forecast is not appropriate here.
+
+```{r}
+sn_huron = snaive(train_huron)
+Acf(sn_huron$residuals, main = "Correlogram of Residuals - Seasonal Naive Method")
+
+```
+```{r}
+ljung <- Box.test(sn_huron$residuals, type = "Ljung-Box", lag = 2)
+print(ljung)
+```
+
+###### Inference:
+
+* Deriving from the ACF and Box-Ljung test, there is autocorrelation between the residuals and therefore, isn't the right option to go with.
+
+
+
+
+##### (iv) Use the training set to produce three forecasts for the period 1956 to 1972, using the naıve method, the driftmethod and the mean method. Plot each forecast alongside the test data.
+
+```{r}
+n_trainhuron = naive(train_huron, h = 17)
+d_trainhuron = rwf(train_huron, drift = TRUE, h = 17)
+m_trainhuron = meanf(train_huron, h = 17)
+```
+
+```{r}
+plot(huron)
+lines(n_trainhuron$mean, col = "green")
+lines(d_trainhuron$mean, col = "blue")
+lines(m_trainhuron$mean, col = "red")
+```
+
+##### (v) Compare the accuracy of each of the forecasts you calculated in part (iv) by comparing their errors. Which forecast performs the best?
+
+```{r}
+print("Accuracy for Naive Method")
+accuracy(n_trainhuron)
+
+print("Accuracy for Drift Method")
+accuracy(d_trainhuron)
+
+print("Accuracy for Mean Method")
+accuracy(m_trainhuron)
+```
+
+
+* Based on the above results (MAPE), it can be inferred that the **Naive Method** and the **Drift Method** have performed well in comparison to the Mean Method.  
+
+
+##### (vi) For the best performing method, compute the residuals and plot them.
+
+```{r}
+Acf(n_trainhuron$residuals, main = "Correlogram of Residuals - Naive Method")
+```
+
+
+```{r}
+Acf(d_trainhuron$residuals, main = "Correlogram of Residuals - Drift Method")
+```
+
+##### (vii) Do the residuals appear to be uncorrelated and normally distributed?
+
+```{r}
+hist(n_trainhuron$residuals, main = "Histogram of Residuals in Naive Method",xlab="Residuals")
+```
+```{r}
+hist(d_trainhuron$residuals, main = "Histogram of Residuals in Drift Method", xlab="Residuals")
+```
+
+* It can be concluded that the residuals are *correlated* and *not normal*. It is right sequenced.
+
+##### (viii) In light of your answer to part (vii), would you like to change your choice of forecast? If so, check the residuals of your second choice
+
+* No. As the MAPE for Naive and Drift have a very slight difference but are significantly better than the Mean Method. Therefore, my choice of forecasting method remains the same. 
+
