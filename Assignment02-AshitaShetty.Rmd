@@ -1,0 +1,421 @@
+---
+title: "Business Forecasting - Assignment 02"
+author: "Ashita Shetty"
+date: "2023-11-27"
+output:
+  html_document: default
+  pdf_document: default
+---
+  
+```{r}
+library(datasets)
+library(fpp2)
+library(ggplot2)
+```
+
+
+
+## Exercise 1
+
+#### elecdaily
+
+
+##### (i) Create a new dataset for only the month of January (i.e. the first 31 days) using the head function and create a scatter plot of Demand against Temperature.
+
+```{r}
+elec_daily = data.frame(elecdaily)
+elec_daily_jan = head(elec_daily, n=31)
+ggplot(elec_daily_jan, aes(x = Temperature, y = Demand)) +
+  geom_point() +
+  labs(title = "Scatter Plot of Demand against Temperature for January",
+       x = "Temperature",
+       y = "Demand")
+```
+
+
+##### (ii) Give a possible explanation of the relationship you see in your scatterplot.
+
+* In general, it can be observed that as the temperature increases, the demand also increases.
+* However, it is not a linear relationship.
+
+
+##### (iii) Create a simple linear regression model in R with Demand as the forecast variable and Temperature as the predictor variable. Write down the equation of the fitted model
+
+```{r}
+lm_model <- lm(Demand ~ Temperature, data=elec_daily_jan)
+summary(lm_model)
+```
+
+```{r}
+#Fitted Model Equation
+intercept <- coef(lm_model)[1]
+slope <- coef(lm_model)[2]
+
+cat("Fitted Model Equation: Demand =", round(intercept, 2), "+", round(slope, 2), "* Temperature\n")
+```
+
+
+##### (iv) Is there any evidence of autocorrelation in the residuals? Do the residuals appear to show heteroscedasticity?
+
+```{r}
+checkresiduals(lm_model)
+```
+
+* Based on the graph above, it can be inferred that there are no autocorrelations between the residuals of the model because it is within the limits of the confidence intervals.
+* The residuals do not appear to show heteroscedasticity since they do not have any pattern indicating there is no variance across data. 
+
+
+##### (v) Use your model to forecast the electricity demand if the temperature is 35 degrees or 15 degrees. Would you trust either or both of these forecasts? Explain your answer.
+###### Hint: you can create a new data frame to use in the forecast function by using the code my.data <- data.frame(Temperature = c(15,35))
+
+```{r}
+
+new_data <- data.frame(Temperature = c(15, 35))
+
+new_forecasts <- predict(lm_model, newdata = new_data)
+
+cat("Forecasted Demand for Temperature 15 degrees:", round(new_forecasts[1], 2), "\n")
+cat("Forecasted Demand for Temperature 35 degrees:", round(new_forecasts[2], 2), "\n")
+
+```
+
+* Considering that our data has a positive slope, our demand increases with increase in temperature.
+* Even for the temperatures mentioned, the forecasted values can be observed as increasing with temperature.
+
+
+##### (vi) Plot Demand against Temperature for all available data in elecdaily. What does this say about your model?
+
+```{r}
+ggplot(elec_daily, aes(x = Temperature, y = Demand)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Scatter Plot of Demand against Temperature",
+       x = "Temperature",
+       y = "Demand")
+```
+
+* As observed, Linear Model Regression wouldn't be an ideal model to opt for since the data follows non-linearity.
+
+
+## Exercise 2
+
+#### shampoo
+
+
+##### (i) Plot the data and comment on any patterns you see.
+
+```{r}
+data(shampoo)
+```
+
+```{r}
+plot(shampoo, main='Time Series of the Shampoo Data', xlab='Time', ylab='Shampoo Sales')
+```
+
+* The data depicts an increasing trend in the Sales of Shampoo through the period of 3 years
+
+
+##### (ii) Fit a simple linear regression model for shampoo with a linear trend predictor variable
+
+```{r}
+shampoo_lm_model <- tslm(shampoo~trend)
+summary(shampoo_lm_model)
+```
+
+
+##### (iii) Is there evidence of autocorrelation in the residuals?
+
+```{r}
+checkresiduals(shampoo_lm_model)
+```
+
+* Based on the ACF plot above, it can be inferred that there is a correlation between the residuals.
+* Since the ACF values have positive and negative values, it can be inferred that they have seasonality as well.
+
+
+##### (iv) Plot the residuals against time and against the fitted values. Do the plots reveal any problems with the model?
+
+```{r}
+residuals <- residuals(shampoo_lm_model)
+
+plot(residuals)
+
+
+```
+```{r}
+
+plot_data <- data.frame(Residuals = residuals(shampoo_lm_model), FittedValues = fitted(shampoo_lm_model))
+
+ggplot(plot_data, aes(x = fitted(shampoo_lm_model), y = residuals)) +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Residuals vs Fitted Values", x = "Fitted Values", y = "Residuals")
+```
+
+* There is no apparent change in the residuals spread across the fitted values, indicating that they are constant.
+* Regression model assumptions are not violated by the residual's lack of autocorrelation or non-normality.
+
+
+##### (v) Create a forecast for shampoo sales for the next year, along with 95% and 80% prediction intervals. Plot the forecast alongside the original data. Why should you be wary about trusting the prediction intervals?
+
+```{r}
+future_period <- data.frame(Month=c(37:48))
+
+forecast <- predict(shampoo_lm_model, newdata = future_period, interval = "prediction", level = c(0.80, 0.95))
+
+plot(forecast)
+
+```
+
+* The prediction intervals showcase the window on how much the forecast can vary.
+* The higher the confidence interval, the more the forecast accuracy will be.
+
+
+##### (vi) Create a multiple linear regression model for shampoo using both a linear trend predictor variable and seasonal dummy variables. Calculate the AICc for both models. Which model is better?
+
+```{r}
+shampoo_sreg <- tslm(shampoo ~ trend + season)
+summary(shampoo_sreg)
+```
+```{r}
+AIC(shampoo_sreg)
+```
+
+```{r}
+AIC(shampoo_lm_model)
+```
+
+* The linear regression model with trend and seasonality had higher AIC, therefore it is the preferred model to go with.
+
+
+## Exercise 3
+
+#### fancy
+
+
+##### (i) Produce a time plot of the data and describe the patterns in the graph. Identify any unusual or unexpected fluctuations in the time series.
+
+```{r}
+data("fancy")
+plot(fancy, main='Time Series of Monthly sales for a Souvenir shop')
+```
+
+* The Time Series graph depicts *seasonality* and *trend* in its pattern.
+* While most of the data, up until 1992 averaged around the same values, it can be observed that an increase was observed in the latter years.
+* The *seasonality* in the trends can also be an indication of tourist seasons or any other festivity/event that attracts more sales.
+
+
+##### (ii) Explain why it is appropriate to take logarithms of these data before fitting a model.
+
+* Logarithmic Transformations are preferred when trying to stabilize the variance in the data across time.
+* They help in normalizing the data when the distribution of data is skewed.
+
+
+##### (iii) Use R to fit a regression model to the logarithms of these sales data with a linear trend, seasonal dummies and a "surfing festival" dummy variable.
+##### Hint: the "surfing festival" dummy variable can be created using the following code.
+#####> festival <- cycle(fancy) == 3
+#####> festival[3] == 0
+
+```{r}
+
+log_fancy <- log(fancy)
+time_index <- seq_along(log_fancy)
+month <- cycle(log_fancy)
+seasonal_dummies <- model.matrix(~ factor(month) - 1)
+festival <- cycle(fancy) == 3
+festival[1:12] <- 0 
+predictors <- data.frame(time_index, seasonal_dummies, festival)
+fancy_lm <- lm(log_fancy ~ ., data = predictors)
+
+summary(fancy_lm)
+
+```
+
+
+##### (iv) Plot the residuals against time and against the fitted values. Do these plots reveal any problems with the model?
+
+```{r}
+
+plot_data <- data.frame(FittedValues=fitted(fancy_lm), Residuals=residuals(fancy_lm))
+plot(residuals)
+
+```
+```{r}
+ggplot(plot_data, aes(x = FittedValues, y = Residuals)) +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Residuals vs Fitted Values", x = "Fitted Values", y = "Residuals")
+```
+
+
+```{r}
+checkresiduals(residuals)
+```
+
+*Residuals V/S Fitted Values*
+
+* No specific pattern can be observed in the graph indicating that there is no heterscedasticity depicting, there is no variance across the data.
+
+*Acf Plot*
+
+* Values of the Acf plot have crossed the confidence level indicating there is autocorrelation, and since the values also lead to the negative indicating there is seasonality in the data.
+
+
+##### (v) Perform a Breusch-Godfrey test. What does it tell you?
+
+```{r}
+library(lmtest)
+
+bg_test <- bgtest(fancy_lm, order = 1)
+print(bg_test)
+
+```
+
+* The Breusch-Godfrey test gives us a very small p-value (<0.05) which suggests that there is an autocorrelation between the residuals.
+
+
+##### (vi) Notwithstanding your answers to the questions above, create a forecast for monthly sales data in 1994. You will need to produce new data for the dummy variable to use in the forecast. One way to do this is to use the following code.
+##### > future.festival <- rep(0, 12)
+##### > future.festival[3] <- 1
+
+```{r}
+
+length_fancy <- length(fancy)
+
+future.festival <- rep(0, 12)
+future.festival[3] <- 1 
+
+future_time_index <- (length_fancy + 1):(length_fancy + 12)
+
+future_months <- rep(1:12, each=1)
+
+future_data <- data.frame(
+ time_index = future_time_index,
+ festival = future.festival
+)
+
+for (i in 1:12) {
+ future_data[paste0("factor.month.", i)] <- ifelse(future_months == i, 1, 0)
+}
+
+sales_forecast_1994 <- predict(fancy_lm, newdata = future_data)
+
+print(sales_forecast_1994)
+```
+
+
+##### (vii) Transform the forecast to obtain predictions for the original (untransformed) data. 
+##### Hint: for a forecast fc, you can extract the predictions using the code fc$mean
+
+```{r}
+original_untransformed_data <- exp(sales_forecast_1994)
+original_untransformed_data <- data.frame(original_untransformed_data)
+print(original_untransformed_data)
+```
+
+
+##### (viii) Recall that applying a log transformation to a time series is equivalent to using a Box-Cox transformation with ?? = 0. Check your answer to part (vii) by using the tslm function on the original (untransformed) data and specifying ?? = 0.
+
+```{r}
+
+library(forecast)
+
+fancy_tslm <- tslm(fancy ~ trend + season + I(festival), lambda = 0)
+
+future_data <- data.frame(
+ trend = seq(max(time(fancy)), by = 1/12, length.out = 12),
+ festival = future.festival
+)
+
+boxcox_forecast_1994 <- forecast(fancy_tslm, newdata = future_data)
+print(boxcox_forecast_1994)
+
+```
+
+
+
+## Exercise 4
+
+#### writing
+
+##### (i) Split the data into a training set from the beginning of 1968 to the end of 1975 and a test set from the beginning of 1976 to the end of 1977
+
+```{r}
+writing_training <- window(writing, start=c(1968,1), end=c(1975,12))
+writing_testing <- window(writing, start=c(1976,1), end=c(1977,12))
+```
+
+
+##### (ii)Plot the sales data for the training set. Propose an appropriate regression model based on the patterns you see in the plot.
+
+```{r}
+plot(writing_training, main ='Sales data for printing & writing paper', xlab='Year', ylab='Sales')
+```
+
+* The plot clearly indicates *seasonality* and *trend* with frequent increases and decreases during specific periods through a year.
+* Proposed model to better forecast would be *Time Series Linear Regression* - it can incorporate both seasonality and trend.
+
+##### (iii) For your chosen model, check for autocorrelation and seasonality in the residuals. Do the residuals appear to be normally distributed?
+
+
+```{r}
+
+writing_model <- tslm(writing_training ~ trend+ season)
+
+forecast_training <- forecast(writing_model)
+
+checkresiduals(forecast_training)
+```
+
+* Based on the ACF plot, it can be inferred that since the values of ACF exceed the confidence levels - there is autocorrelation between the residuals.
+* Secondly, the ACF values have positive and negative values indicating seasonality.
+* The residuals are not normally distributed.
+
+
+##### (iv) Plot the residuals against time and against the fitted values. Do these plots reveal any problems with the model
+
+```{r}
+residuals_w <- residuals(writing_model)
+
+plot_data <- data.frame(Residuals = residuals_w, FittedValues = fitted(writing_model))
+
+plot(residuals_w)
+
+
+```
+
+```{r}
+ggplot(plot_data, aes(x = fitted(writing_model), y = residuals_w)) +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Residuals vs Fitted Values", x = "Fitted Values", y = "Residuals")
+
+```
+
+* The data shows a funnel pattern, and therefore it has heterscedasticity.
+
+
+##### (v) Create a forecast for 1976 and 1977 using your model, and plot it alongside the full data set from 1968 to 1977.
+
+```{r}
+train_forecast <- forecast(writing_model, h = 24)
+train_forecast
+plot(writing)
+  lines(train_forecast$mean, col = "red")
+```
+
+
+##### (vi) Check the accuracy of the forecast by comparing the errors to the standard deviation of the forecast variable in the test set. How well does your model perform?
+
+```{r}
+residuals <- residuals(writing_model)
+
+stddev_test <- sd(writing_testing)
+
+accuracy <- (mean(abs(residuals) / stddev_test))*100
+
+cat("Accuracy of the model:", round((accuracy),2),'%')
+```
+
+* Based on the accuracy observed, it can inferred that the model performs poorly.
+
